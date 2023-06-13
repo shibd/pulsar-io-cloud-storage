@@ -272,8 +272,9 @@ public abstract class BlobStoreAbstractSink<V extends BlobStoreAbstractConfig> i
                 ByteBuffer payload = bindValue(iter, format);
                 int uploadSize = singleTopicRecordsToInsert.size();
                 long uploadBytes = getBytesSum(singleTopicRecordsToInsert);
-                log.info("Uploading blob {} from topic {} uploadSize {} out of currentBatchSize {} "
+                log.info("Uploading {} messages to blob {} from topic {} uploadSize {} out of currentBatchSize {} "
                         + " uploadBytes {} out of currcurrentBatchBytes {}",
+                        singleTopicRecordsToInsert.size(),
                         filepath, entry.getKey(),
                         uploadSize, currentBatchSize.get(),
                         uploadBytes, currentBatchBytes.get());
@@ -288,7 +289,8 @@ public abstract class BlobStoreAbstractSink<V extends BlobStoreAbstractConfig> i
                     sinkContext.recordMetric(METRICS_TOTAL_SUCCESS, singleTopicRecordsToInsert.size());
                     sinkContext.recordMetric(METRICS_LATEST_UPLOAD_ELAPSED_TIME, elapsedMs);
                 }
-                log.info("Successfully uploaded blob {} from topic {} uploadSize {} uploadBytes {}",
+                log.info("Successfully uploaded {} messages to blob {} from topic {} uploadSize {} uploadBytes {}",
+                    singleTopicRecordsToInsert.size(),
                     filepath, entry.getKey(),
                     uploadSize, uploadBytes);
             } catch (Exception e) {
