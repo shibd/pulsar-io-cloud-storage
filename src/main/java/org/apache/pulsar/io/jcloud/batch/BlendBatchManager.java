@@ -28,11 +28,11 @@ import org.apache.pulsar.functions.api.Record;
  * BlendBatchManager is a type of BatchManager that uses a single BatchContainer
  * for all topics. This means that all records, regardless of topic, are batched together.
  */
-public class BlendBatchManger implements BatchManager {
+public class BlendBatchManager implements BatchManager {
 
     private final BatchContainer batchContainer;
 
-    public BlendBatchManger(long maxBatchSize, long maxBatchBytes, int maxPendingQueueSize) {
+    public BlendBatchManager(long maxBatchSize, long maxBatchBytes, int maxPendingQueueSize) {
         batchContainer = new BatchContainer(maxBatchSize, maxBatchBytes, maxPendingQueueSize);
     }
 
@@ -64,7 +64,7 @@ public class BlendBatchManger implements BatchManager {
         return batchContainer.needFlush();
     }
 
-    public Map<String, List<Record<GenericRecord>>> getFlushData() {
+    public Map<String, List<Record<GenericRecord>>> poolFlushData() {
         List<Record<GenericRecord>> records = batchContainer.poolNeedFlushRecords();
         return records.stream().collect(Collectors.groupingBy(record -> record.getTopicName().get()));
     }

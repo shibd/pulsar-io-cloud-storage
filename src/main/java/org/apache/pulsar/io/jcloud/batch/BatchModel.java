@@ -18,6 +18,9 @@
  */
 package org.apache.pulsar.io.jcloud.batch;
 
+/**
+ * Enum representing the different batch models.
+ */
 public enum BatchModel {
     BLEND,
     PARTITIONED

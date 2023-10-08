@@ -20,6 +20,8 @@ package org.apache.pulsar.io.jcloud.batch;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
 import org.apache.pulsar.io.jcloud.BlobStoreAbstractConfig;
@@ -39,7 +41,7 @@ public interface BatchManager {
     static BatchManager createBatchManager(BlobStoreAbstractConfig config) {
         switch (config.getBatchModel()) {
             case BLEND:
-                return new BlendBatchManger(config.getBatchSize(),
+                return new BlendBatchManager(config.getBatchSize(),
                         config.getMaxBatchBytes(), config.getPendingQueueSize());
             case PARTITIONED:
                 return new PartitionedBatchManager(config.getBatchSize(),
@@ -47,6 +49,21 @@ public interface BatchManager {
             default:
                 throw new IllegalArgumentException("Unsupported batch model: " + config.getBatchModel());
         }
+    }
+
+    /**
+     * Calculate the sum of the byte sizes of the messages in a list of records.
+     *
+     * @param records The list of records whose message sizes are to be summed.
+     * @return The sum of the byte sizes of the messages in the given records.
+     */
+    static long getBytesSum(List<Record<GenericRecord>> records) {
+        return records.stream()
+                .map(Record::getMessage)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .mapToLong(Message::size)
+                .sum();
     }
 
     /**
@@ -66,7 +83,7 @@ public interface BatchManager {
      * Retrieves the data that needs to be flushed.
      * @return a map where the keys are the topic names and the values are the lists of records for each topic
      */
-    Map<String, List<Record<GenericRecord>>> getFlushData();
+    Map<String, List<Record<GenericRecord>>> poolFlushData();
 
     /**
      * Retrieves the current batch size for a given topic.

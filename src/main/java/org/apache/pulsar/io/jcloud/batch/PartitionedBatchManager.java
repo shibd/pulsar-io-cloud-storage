@@ -73,7 +73,7 @@ public class PartitionedBatchManager implements BatchManager {
         return topicBatchContainer.values().stream().anyMatch(BatchContainer::needFlush);
     }
 
-    public Map<String, List<Record<GenericRecord>>> getFlushData() {
+    public Map<String, List<Record<GenericRecord>>> poolFlushData() {
         Map<String, List<Record<GenericRecord>>> flushData = new HashMap<>();
         topicBatchContainer.forEach((topicName, batchContainer) -> {
             if (batchContainer.needFlush()) {

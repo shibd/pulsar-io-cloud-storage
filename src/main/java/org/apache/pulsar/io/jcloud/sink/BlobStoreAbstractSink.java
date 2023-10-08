@@ -19,6 +19,7 @@
 package org.apache.pulsar.io.jcloud.sink;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.pulsar.io.jcloud.batch.BatchManager.getBytesSum;
 import static org.apache.pulsar.io.jcloud.util.AvroRecordUtil.getPulsarSchema;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
@@ -26,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
@@ -209,7 +208,7 @@ public abstract class BlobStoreAbstractSink<V extends BlobStoreAbstractConfig> i
 
     private void unsafeFlush() {
         final long timeStampForPartitioning = System.currentTimeMillis();
-        Map<String, List<Record<GenericRecord>>> recordsToInsertByTopic = batchManager.getFlushData();
+        Map<String, List<Record<GenericRecord>>> recordsToInsertByTopic = batchManager.poolFlushData();
         for (Map.Entry<String, List<Record<GenericRecord>>> entry : recordsToInsertByTopic.entrySet()) {
             String topicName = entry.getKey();
             List<Record<GenericRecord>> singleTopicRecordsToInsert = entry.getValue();
@@ -299,15 +298,6 @@ public abstract class BlobStoreAbstractSink<V extends BlobStoreAbstractConfig> i
         String path = pathPrefix + partitionedPath + format.getExtension();
         log.info("generate message[recordSequence={}] savePath: {}", message.getRecordSequence().get(), path);
         return path;
-    }
-
-    private long getBytesSum(List<Record<GenericRecord>> records) {
-        return records.stream()
-                .map(Record::getMessage)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .mapToLong(Message::size)
-                .sum();
     }
 
 }

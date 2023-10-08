@@ -25,6 +25,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
 
+/**
+ * BatchContainer is used to store and manage batches of records.
+ * It keeps track of the current batch size and bytes, and checks
+ * if the batch needs to be flushed based on the max batch size and bytes.
+ */
 public class BatchContainer {
 
     private final long maxBatchSize;
