@@ -89,7 +89,6 @@ public class CloudStorageGenericRecordSinkTest {
         this.mockBlobWriter = mock(BlobWriter.class);
         this.mockRecord = mock(Record.class);
 
-
         doReturn("a/test.json").when(sink)
                 .buildPartitionPath(any(Record.class), any(Partitioner.class), any(Format.class), any(Long.class));
         doReturn(mockBlobWriter).when(sink).initBlobWriter(any(CloudStorageSinkConfig.class));
@@ -173,8 +172,8 @@ public class CloudStorageGenericRecordSinkTest {
         sendMockRecord(1);
         await().atMost(Duration.ofSeconds(10)).untilAsserted(
                 () -> {
-                    Assert.assertEquals(0, this.sink.currentBatchBytes.get());
-                    Assert.assertEquals(0, this.sink.currentBatchSize.get());
+                    Assert.assertEquals(0, this.sink.batchManager.getCurrentBatchBytes("test-topic"));
+                    Assert.assertEquals(0, this.sink.batchManager.getCurrentBatchSize("test-topic"));
                 }
         );
     }
