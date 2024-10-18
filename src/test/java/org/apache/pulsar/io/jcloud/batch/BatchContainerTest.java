@@ -19,6 +19,7 @@
 package org.apache.pulsar.io.jcloud.batch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -69,6 +70,15 @@ public class BatchContainerTest {
         batchContainer.add(createMockRecord(10));
         Thread.sleep(MAX_BATCH_TIME_MS + 100); // Wait longer than maxBatchTimeMs
         assertTrue(batchContainer.needFlush());
+        List<Record<GenericRecord>> records = batchContainer.poolNeedFlushRecords();
+        assertEquals(1, records.size());
+        assertTrue(batchContainer.isEmpty());
+    }
+
+    @Test
+    public void testPollData() throws InterruptedException {
+        batchContainer.add(createMockRecord(1));
+        assertFalse(batchContainer.needFlush());
         List<Record<GenericRecord>> records = batchContainer.poolNeedFlushRecords();
         assertEquals(1, records.size());
         assertTrue(batchContainer.isEmpty());

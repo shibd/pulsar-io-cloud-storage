@@ -93,7 +93,10 @@ public class PartitionedBatchManager implements BatchManager {
         Map<String, List<Record<GenericRecord>>> flushData = new HashMap<>();
         topicBatchContainer.forEach((topicName, batchContainer) -> {
             if (batchContainer.needFlush()) {
-                flushData.put(topicName, batchContainer.poolNeedFlushRecords());
+                List<Record<GenericRecord>> records = batchContainer.poolNeedFlushRecords();
+                if (!records.isEmpty()) {
+                    flushData.put(topicName, records);
+                }
             }
         });
         return flushData;

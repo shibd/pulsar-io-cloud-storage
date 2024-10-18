@@ -87,38 +87,41 @@ public class PartitionedBatchManagerTest {
         PartitionedBatchManager partitionedBatchManager = new PartitionedBatchManager(1000,
                 100, maxBatchTimeout, 1000);
 
-        // Add and assert status
+        // 1. Add and assert status
         partitionedBatchManager.add(getRecord("topic-0", 2));
         partitionedBatchManager.add(getRecord("topic-1", 101));
 
-        // First sleep maxBatchTimeout / 2
+        // 2. First sleep maxBatchTimeout / 2
         Thread.sleep(maxBatchTimeout / 2);
 
-        // poll flush data, assert topic-1 data
+        // 3. Poll flush data, assert topic-1 data
         Map<String, List<Record<GenericRecord>>> flushData = partitionedBatchManager.pollNeedFlushData();
         assertEquals(1, flushData.size());
         assertFalse(flushData.containsKey("topic-0"));
         assertEquals(1, flushData.get("topic-1").size());
 
-        // write topic-1 data again
+        // 4. write topic-1 data again, assert not need flush
         partitionedBatchManager.add(getRecord("topic-1", 2));
         // Second sleep maxBatchTimeout / 2
         Thread.sleep(maxBatchTimeout / 2 + 100);
 
-        // assert topic-0 message timeout
+        // 5. assert topic-0 message timeout
         flushData = partitionedBatchManager.pollNeedFlushData();
         assertEquals(1, flushData.size());
         assertEquals(1, flushData.get("topic-0").size());
         assertFalse(flushData.containsKey("topic-1"));
 
-        // Sleep assert can get topic-1 data
+        // 6. Sleep assert can get topic-1 data
         Thread.sleep(maxBatchTimeout / 2 + 100);
         flushData = partitionedBatchManager.pollNeedFlushData();
         assertEquals(1, flushData.size());
         assertFalse(flushData.containsKey("topic-0"));
         assertEquals(1, flushData.get("topic-1").size());
-
         assertTrue(partitionedBatchManager.isEmpty());
+
+        // Sleep and trigger timeout, and assert not data need flush
+        Thread.sleep(maxBatchTimeout + 100);
+        assertTrue(partitionedBatchManager.pollNeedFlushData().isEmpty());
     }
 
     Record<GenericRecord> getRecord(String topicName, int size) {

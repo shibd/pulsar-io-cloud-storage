@@ -79,11 +79,14 @@ public class BlendBatchMangerTest {
         long maxBatchTimeout = 1000;
         BlendBatchManager blendBatchManger = new BlendBatchManager(1000,
                 1000, maxBatchTimeout, 1000);
+
         blendBatchManger.add(getRecord("topic-0", 2));
         blendBatchManger.add(getRecord("topic-1", 2));
         assertEquals(2, blendBatchManger.getCurrentBatchSize(null));
         assertEquals(4, blendBatchManger.getCurrentBatchBytes(null));
         Thread.sleep(maxBatchTimeout + 100);
+
+        // Time out flush
         Map<String, List<Record<GenericRecord>>> flushData = blendBatchManger.pollNeedFlushData();
         assertEquals(2, flushData.size());
         assertEquals(1, flushData.get("topic-0").size());
@@ -91,6 +94,10 @@ public class BlendBatchMangerTest {
         assertTrue(blendBatchManger.isEmpty());
         assertEquals(0, blendBatchManger.getCurrentBatchSize(null));
         assertEquals(0, blendBatchManger.getCurrentBatchBytes(null));
+
+        // Time out again
+        Thread.sleep(maxBatchTimeout + 100);
+        assertTrue(blendBatchManger.pollNeedFlushData().isEmpty());
     }
 
     Record<GenericRecord> getRecord(String topicName, int size) {

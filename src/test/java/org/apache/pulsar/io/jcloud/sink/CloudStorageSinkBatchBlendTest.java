@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
@@ -57,7 +58,7 @@ import org.mockito.stubbing.Answer;
 /**
  * Test for {@link CloudStorageGenericRecordSink}.
  */
-public class CloudStorageGenericRecordSinkTest {
+public class CloudStorageSinkBatchBlendTest {
 
     private static final int PAYLOAD_BYTES = 100;
 
@@ -83,6 +84,7 @@ public class CloudStorageGenericRecordSinkTest {
         this.config.put("bucket", "just/a/test");
         this.config.put("formatType", "bytes");
         this.config.put("partitionerType", "default");
+        this.config.put("batchModel", "BLEND");
 
         this.sink = spy(new CloudStorageGenericRecordSink());
         this.mockSinkContext = mock(SinkContext.class);
@@ -96,7 +98,6 @@ public class CloudStorageGenericRecordSinkTest {
 
         Message mockMessage = mock(Message.class);
         when(mockMessage.size()).thenReturn(PAYLOAD_BYTES);
-
 
         GenericSchema<GenericRecord> schema = createTestSchema();
         GenericRecord genericRecord = spy(createTestRecord(schema));
@@ -158,6 +159,33 @@ public class CloudStorageGenericRecordSinkTest {
         this.config.put("batchSize", 1000); // set high batchSize to prevent flush
 
         verifyRecordAck(100);
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void repeatedlyFlushOnMultiConditionTest() throws Exception {
+        this.config.put("pendingQueueSize", 100); // accept high number of messages
+        this.config.put("batchTimeMs", 1000);
+        this.config.put("maxBatchBytes", 10 * PAYLOAD_BYTES);
+        this.config.put("batchSize", 5);
+        this.sink.open(this.config, this.mockSinkContext);
+
+        // Gen random message size
+        Message randomMessage = mock(Message.class);
+        when(randomMessage.size()).thenAnswer((Answer<Integer>) invocation -> {
+            int randomMultiplier = ThreadLocalRandom.current().nextInt(1, 6);
+            return PAYLOAD_BYTES * randomMultiplier;
+        });
+        when(mockRecord.getMessage()).thenReturn(Optional.of(randomMessage));
+
+        int numberOfRecords = 100;
+        for (int i = 0; i < numberOfRecords; i++) {
+            this.sink.write(mockRecord);
+            Thread.sleep(ThreadLocalRandom.current().nextInt(1, 500));
+        }
+        await().atMost(Duration.ofSeconds(60)).untilAsserted(
+                () -> verify(mockRecord, times(numberOfRecords)).ack()
+        );
     }
 
     @Test

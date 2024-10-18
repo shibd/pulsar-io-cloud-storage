@@ -160,8 +160,8 @@ public class BlobStoreAbstractConfig implements Serializable {
                     "pathPrefix cannot start with '/',the style is 'xx/xxx/'.");
             checkArgument(StringUtils.endsWith(pathPrefix, "/"),
                     "pathPrefix must end with '/',the style is 'xx/xxx/'.");
-            pathPrefix = pathPrefix.trim();
         }
+        pathPrefix = StringUtils.trimToEmpty(pathPrefix);
 
         if ("bytes".equalsIgnoreCase(formatType)) {
             checkArgument(StringUtils.isNotEmpty(bytesFormatTypeSeparator),
